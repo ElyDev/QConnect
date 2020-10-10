@@ -234,8 +234,8 @@ export class EvaluationPage extends QcParentScreen {
         notes,
         highlightedWords,
         highlightedAyahs,
-        improvementAreas: selectedImprovementAreas
-      },
+        improvementAreas: selectedImprovementAreas,
+        },
       ...submission
     };
     try {
@@ -272,19 +272,19 @@ export class EvaluationPage extends QcParentScreen {
       notes,
       rating,
       selectedImprovementAreas,
-      assignmentLength
+      highlightedAyahs,
+      highlightedWords
     } = this.state;
 
-    const { assignmentType } = this.props.navigation.state.params;
     this.setState({ isLoading: true });
     let evaluationDetails = {
       rating,
       notes,
-      assignmentLength,
+      highlightedWords,
+      highlightedAyahs,
       improvementAreas: selectedImprovementAreas,
-      assignmentType: assignmentType
     };
-
+    
     await FirebaseFunctions.overwriteOldEvaluation(
       classID,
       studentID,
@@ -356,9 +356,13 @@ export class EvaluationPage extends QcParentScreen {
     if (selectedWord.char_type === "word") {
       let highlightedWords = this.state.highlightedWords;
       let wordEval = _.get(highlightedWords, selectedWord.id, {});
+
+      //merge the new notes with the old notes..
+      Object.assign(wordEval, evalNotes);
+
       highlightedWords = {
         ...highlightedWords,
-        [selectedWord.id]: { ...wordEval, ...evalNotes }
+        [selectedWord.id]: wordEval
       };
       this.setState({ highlightedWords });
     } else if (selectedWord.char_type === "end") {
@@ -473,8 +477,9 @@ export class EvaluationPage extends QcParentScreen {
             RightOnPress={() => {
               this.setState({
                 readOnly: false,
-                improvementAreas: this.state.improvementAreas
+                selectedImprovementAreas: this.state.improvementAreas
               });
+              this.getTeacherCustomImprovementAreas();
             }}
           />
         ) : (
@@ -599,6 +604,7 @@ export class EvaluationPage extends QcParentScreen {
               <MushafScreen
                 assignToID={studentID}
                 hideHeader={true}
+                readOnly={readOnly}
                 showSelectedLinesOnly={false}
                 classID={classID}
                 showTooltipOnPress={readOnly ? "whenHighlighted" : "true"}
@@ -609,8 +615,8 @@ export class EvaluationPage extends QcParentScreen {
                     _.isEqual(this.state.highlightedAyahs, {}))
                 }
                 selection={this.state.selection}
-                highlightedWords={_.clone(highlightedWords)}
-                highlightedAyahs={_.clone(highlightedAyahs)}
+                highlightedWords={_.cloneDeep(highlightedWords)}
+                highlightedAyahs={_.cloneDeep(highlightedAyahs)}
                 highlightedColor={colors.darkRed}
                 assignmentName={assignmentName}
                 assignmentType={assignmentType}
